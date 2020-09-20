@@ -110,23 +110,64 @@ private:
     * @return Return 0 indicates the successful read, other return values suggest unsuccessful read.
     */
     uint8_t readData(void *pBuf, size_t size);
-    // Read status byte
-    // Read status word
-    // Convert raw READ_VIN
-    // Convert raw READ_IIN
-    // Convert raw READ_VOUT
-    // Convert raw READ_IOUT
-    // Convert raw READ_BCM_ROUT
-    // Convert raw READ_TEMPERATURE_1
-    // Convert raw READ_K_FACTOR
-    // Convert raw TON_DELAY
+
+    /**
+     * @brief Reads READ_VIN register from BCM module and converts
+     * the reported value to actual value in Volts.
+     */ 
+    void convert_raw_READ_VIN();
+
+    /**
+     * @brief Reads READ_IIN register from BCM module and converts
+     * the reported value to actual value in Amps.
+     */
+    void convert_raw_READ_IIN();
+
+    /**
+     * @brief Reads READ_VOUT register from BCM module and converts
+     * the reported value to actual value in Volts.
+     */
+    void convert_raw_READ_VOUT();
+
+    /**
+     * @brief Reads READ_IOUT register from BCM module and converts
+     * the reported value to actual value in Amps.
+     */
+    void convert_raw_READ_IOUT();
+
+    /**
+     * @brief Reads READ_BCM_ROUT register from BCM module and converts
+     * the reported value to actual value in Ohms.
+     */
+    void convert_raw_READ_BCM_ROUT();
+
+    /**
+     * @brief Reads READ_TEMPERATURE_1 register from BCM module and converts
+     * the reported value to actual value in °C.
+     */
+    void convert_raw_READ_TEMPERATURE_1();
+
+    /**
+     * @brief Reads READ_K_FACTOR register from BCM module and converts
+     * the reported value to actual value in V/V.
+     */
+    void convert_raw_READ_K_FACTOR();
+
+    /**
+     * @brief Reads TON_DELAY register from BCM module and converts
+     * the reported value to actual value in seconds.
+     */
+    void convert_raw_TON_DELAY();
+    
+    // TODO: function to read status byte
+    // TODO: function to read status word
 
 public:
     #define ERR_OK             0      //No error
     #define ERR_DATA_BUS      -1      //Data bus error
     #define ERR_IC_VERSION    -2      //Chip version does not match
 
-    typedef struct {
+    struct {
         uint8_t                     : 1; // UNSUPPORTED - VOUT FAULT OR WARNING
         uint8_t iout_pout_fault     : 1; // IOUT/POUT FAULT OR WARNING
         uint8_t input_fault         : 1; // INPUT FAULT OR WARNING
@@ -145,7 +186,7 @@ public:
         uint8_t unknown_fault       : 1; // NONE OF THE ABOVE
     } sStatusData_t;
 
-    typedef struct {
+    struct {
         uint8_t iout_oc_fault   : 1;
         uint8_t                 : 1; // UNSUPPORTED - IOUT_OC_LV_FAULT
         uint8_t iout_oc_warning : 1;
@@ -157,7 +198,7 @@ public:
     } sStatusIOUT_t;
 
     // A one indicates a fault.
-    typedef struct {
+    struct {
         uint8_t vin_ov_fault   : 1;
         uint8_t vin_ov_warning : 1;
         uint8_t                : 1; // UNSUPPORTED - VIN_UV_WARNING
@@ -169,7 +210,7 @@ public:
     } sStatusInput_t;
 
     // A one indicates a fault.
-    typedef struct {
+    struct {
         uint8_t ot_fault   : 1;
         uint8_t ot_warning : 1;
         uint8_t            : 1; // UNSUPPORTED - UT_WARNING
@@ -179,7 +220,7 @@ public:
 
     // The STATUS_CML data byte will be asserted when an unsupported
     // PMBus® command or data or other communication fault occurs.
-    typedef struct {
+    struct {
         uint8_t cmd_stat_rx  : 1; // Invalid Or Unsupported Command Received
         uint8_t data_stat_rx : 1;
         uint8_t              : 1; // UNSUPPORTED - Packet Error Check Failed
@@ -190,12 +231,25 @@ public:
         uint8_t              : 1; // UNSUPPORTED - Other Memory Or Logic Fault
     } sStatusCML_t;
 
-    typedef struct {
+    struct {
         uint8_t reserved          : 5; // Reserved bits
         uint8_t bcm_uart_cml      : 1; // BCM UART CML
         uint8_t shutdown_fault    : 1; // Hardware Protections Shutdown Fault
         uint8_t reverse_operation : 1; // BCM Reverse Operation.
     } sStatusSpecific_t;
+
+    // Data structure for measurement data.
+    struct {
+        uint16_t vin;  // HI-side voltage
+        uint16_t iin;  // HI-side current
+        uint16_t vout; // LO-side voltage
+        uint16_t iout; // LO-side current
+        uint16_t pout; // LO-side power
+        uint16_t rout; // Low-voltage side output resistance
+        uint16_t temperature; // Internal temperature in °C.
+        uint16_t kfactor;     // K factor
+        uint16_t tdelay;      // Start up delay in addition to fixed delay
+    } sData_t;
 
     /*!
    * @brief Construct the function
@@ -210,25 +264,31 @@ public:
     */
     uint32_t  readSerialNumber();
 
+    /**
+    * @brief Reads HI-side voltage. 
+    * @return the actual, corrected measurement.
+    */
+    uint16_t get_READ_VIN();
+
+    /**
+    * @brief Reads HI-side current. 
+    * @return the actual, corrected measurement.
+    */
+    uint16_t get_READ_IIN();
+
      /**
     * @brief Initialize the function
     * @return Return 0 indicates a successful initialization, while other values indicates failure and return to error code.
     */
     int begin();
 
-    // get READ_VIN
-    // get READ_IIN
-    // get READ_VOUT
-    // get READ_IOUT
-    // get READ_BCM_ROUT
-    // get READ_TEMPERATURE_1
-    // get READ_K_FACTOR 
-    // get TON_DELAY
+    // TODO: function get_READ_VOUT()
+    // TODO: function get_READ_IOUT()
+    // TODO: function get_READ_BCM_ROUT()
+    // TODO: function get_READ_TEMPERATURE_1()
+    // TODO: function get_READ_K_FACTOR() 
+    // TODO: function get_TON_DELAY()
+    // TODO: function get_READ_POUT()
 };
 
 #endif
-
-// TODO: Write byte protocol
-// TODO: read byte protocol
-// TODO: write word protocol
-// TODO: read word protocol
