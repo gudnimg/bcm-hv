@@ -8,7 +8,7 @@ Vicor::Vicor(TwoWire *pWire, uint8_t address){
 int Vicor::begin() 
 {
   _pWire->begin(DEFAULT_ADDRESS);
-  _pWire->setClock(100000); // Set i2c clock frequency to 100kHz
+  _pWire->setClock(400000); // Set i2c clock frequency to 400kHz
   /*uint8_t data[2];
   if(readSerialNumber() == 0){
     Serial.println("bus data access error");
@@ -17,33 +17,13 @@ int Vicor::begin()
   return ERR_OK;
 }
 
-uint32_t Vicor::readSerialNumber()
-{
-    uint32_t result = 0 ;
-    uint8_t serialNumber1[3];
-    uint8_t serialNumber2[3];
-    uint8_t rawData[6];
-    writeCommand(VICOR_CMD_MFR_SERIAL, 2);
-    delay(1);
-    readData(rawData,6);
-    memcpy(serialNumber1,rawData,3);
-    memcpy(serialNumber2,rawData+3,3);
-    result = serialNumber1[0];
-    result = (result << 8) | serialNumber1[1];
-    result = (result << 8) | serialNumber2[0];
-    result = (result << 8) | serialNumber2[1];
-  return result;
-}
-
 Vicor::sStatusData_t Vicor::read_status_word() {
   sStatusData_t status_word;
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_STATUS_WORD, 1); // Write I2C command
-  delay(1);
-  readData(rawData, 1); // Read data from register READ_POUT
-  uint16_t data = (rawData[0]<<8) | rawData[1];
+  write(VICOR_CMD_STATUS_WORD, 1, false); // Write I2C command
+  readData(rawData, 2); // Read data from register READ_POUT
+  uint16_t data = (rawData[1]<<8) | rawData[0];
   memcpy(&status_word, &data, 2);
-  //sStatusData_t = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
   Serial.print("Input Fault: ");
   Serial.println(status_word.input_fault);
   Serial.print("iout_oc_fault: ");
@@ -95,10 +75,9 @@ uint16_t Vicor::get_READ_BCM_ROUT() {
 
 uint16_t Vicor::get_READ_TEMPERATURE_1() {
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_READ_TEMPERATURE_1, 1); // Write I2C command
-  delay(1);
+  write(VICOR_CMD_READ_TEMPERATURE_1, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_TEMPERATURE_1
-  sData_t.temperature = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+  sData_t.temperature = (rawData[1] << 8) | rawData[0]; // Combine high byte and low byte.
   return sData_t.temperature;
 }
 
@@ -114,128 +93,123 @@ uint16_t Vicor::get_TON_DELAY() {
 
 uint16_t Vicor::get_READ_POUT() {
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_READ_POUT, 1); // Write I2C command
-  delay(1);
+  write(VICOR_CMD_READ_POUT, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_POUT
-  sData_t.pout = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+
+  sData_t.pout = (rawData[1] << 8) | rawData[0]; // Combine high byte and low byte.
   return sData_t.pout;
 }
 
 uint16_t Vicor::get_MFR_VIN_MIN() {
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_MFR_VIN_MIN, 1); // Write I2C command
-  delay(1);
+  write(VICOR_CMD_MFR_VIN_MIN, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_POUT
-  uint16_t data = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+
+  uint16_t data = (rawData[1] << 8) | rawData[0]; // Combine high byte and low byte.
   return data;
 }
 
-
-
-void Vicor::write_PAGE(){
-  uint8_t rawData[1] = {0x00};
-  writeCommand(VICOR_CMD_PAGE, 1); // Write I2C command
-  delay(1);
-  write(rawData, 1);
+void Vicor::write_PAGE(uint8_t data_byte){
+  uint8_t rawData[2] = {VICOR_CMD_PAGE, data_byte};
+  write(rawData, 2, true);
 }
 
-void Vicor::writeCommand(uint16_t cmd, size_t size)
-{
-  uint8_t _pBuf[2];
-  _pBuf[0] = cmd >> 8;
-  _pBuf[1] = cmd & 0xFF;
-  //delay(1);
-  write(_pBuf,2);
+// This overload allows a single byte as input for pBuf.
+void Vicor::write(uint8_t pBuf, size_t size, bool sendStop) {
+  write(&pBuf, size, sendStop);
 }
 
-void Vicor::write(const void* pBuf,size_t size)
+void Vicor::write(uint8_t* pBuf, size_t size, bool sendStop)
 {
   if (pBuf == NULL) {
     Serial.println("pBuf ERROR!! : null pointer");
   }
-  uint8_t * _pBuf = (uint8_t *)pBuf;
-  _pWire->beginTransmission(_address);
-  for (uint8_t i = 0; i < size; i++) {
-    _pWire->write(_pBuf[i]);
+  _pWire->beginTransmission(_address); // Start conditon + Device Address + Write bit
+  _pWire->write(pBuf, size);
+  uint8_t ret = _pWire->endTransmission(sendStop); // use false to not send stop condition
+
+  if (ret != 0)
+  {
+    Serial.println("Error in endTransmission().");
   }
-  _pWire->endTransmission();
 }
 
 uint8_t Vicor::readData(void *pBuf, size_t size) {
-  if (pBuf == NULL) {
+  if (pBuf == nullptr) {
     Serial.println("pBuf ERROR!! : null pointer");
   }
   uint8_t * _pBuf = (uint8_t *)pBuf;
-  _pWire->requestFrom(_address, size);
-  uint8_t len = 0;
+  _pWire->requestFrom(_address, (uint8_t)size, (uint8_t)true);
+
+  uint8_t len = size;
   for (uint8_t i = 0 ; i < size; i++) {
     _pBuf[i] = _pWire->read();
-    len++;
+    len--;
   }
-  
-  _pWire->endTransmission();
+
   return len;
 }
 
 void Vicor::convert_raw_READ_VIN() {
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_READ_VIN, 1); // Write I2C command
-  //delay(1);
+  write(VICOR_CMD_READ_VIN, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_VIN
-  sData_t.vin = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+  sData_t.vin = (rawData[1] << 8) | rawData[0]; // Combine high byte and low byte.
   sData_t.vin = sData_t.vin / 10; // V_actual = V_reported * 10^-1 (V)
 }
 
 void Vicor::convert_raw_READ_IIN() {
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_READ_IIN, 1); // Write I2C command
-  delay(1);
+  write(VICOR_CMD_READ_IIN, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_IIN
-  sData_t.iin = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+  sData_t.iin = (rawData[1] << 8) | rawData[0]; // Combine high byte and low byte.
   sData_t.iin = sData_t.iin / 1000; // I_actual = I_reported * 10^-3 (A)
 }
 
 void Vicor::convert_raw_READ_VOUT() {
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_READ_VOUT, 1); // Write I2C command
-  delay(1);
+  write(VICOR_CMD_READ_VOUT, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_VOUT
-  sData_t.vout = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+  sData_t.vout = (rawData[1] << 8) | rawData[0]; // Combine high byte and low byte.
   sData_t.vout = sData_t.vout / 10; // V_actual = V_reported * 10^-1 (V)
 }
 
 void Vicor::convert_raw_READ_IOUT() {
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_READ_IOUT, 1); // Write I2C command
-  delay(1);
+  write(VICOR_CMD_READ_IOUT, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_IOUT
-  sData_t.iout = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+  sData_t.iout = (rawData[1] << 8) | rawData[0]; // Combine high byte and low byte.
   sData_t.iout = sData_t.iout / 100; // I_actual = I_reported * 10^-2 (A)
 }
 
 void Vicor::convert_raw_READ_BCM_ROUT() {
+  //write_PAGE(page_zero); // Resistance is only readable if Page is 0x01.
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_READ_BCM_ROUT, 1); // Write I2C command
-  delay(1);
+  write(VICOR_CMD_READ_BCM_ROUT, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_BCM_ROUT
-  sData_t.rout = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+  sData_t.rout = (rawData[1] << 8) | rawData[0]; // Combine high byte and low byte.
   sData_t.rout = sData_t.rout / 100000; // R_actual = R_reported * 10^-5 (Ohms)
 }
 
 void Vicor::convert_raw_READ_K_FACTOR() {
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_READ_K_FACTOR, 1); // Write I2C command
-  delay(1);
-  readData(rawData, 2); // Read data from register READ_BCM_ROUT
-  sData_t.kfactor = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+  write(VICOR_CMD_READ_K_FACTOR, 1, false); // Write I2C command
+  readData(rawData, 2); // Read data from register READ_K_FACTOR
+  sData_t.kfactor = (rawData[1] << 8) | rawData[0]; // Combine high byte and low byte.
   sData_t.kfactor = sData_t.kfactor / 65536; // K_actual = K_reported * 2^-16 (V/V)
 }
 
 void Vicor::convert_raw_TON_DELAY() {
   uint8_t rawData[2]; // buffer for 2 bytes
-  writeCommand(VICOR_CMD_TON_DELAY, 1); // Write I2C command
-  delay(1);
-  readData(rawData, 2); // Read data from register READ_BCM_ROUT
-  sData_t.tdelay = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+  write(VICOR_CMD_TON_DELAY, 1, false); // Write I2C command
+  readData(rawData, 2); // Read data from register TON_DELAY
+  sData_t.tdelay = (rawData[1] << 8) | rawData[0]; // Combine high byte and low byte.
   sData_t.tdelay = sData_t.tdelay / 1000; // t_actual = t_reported * 10^-3 (seconds)
+}
+
+void Vicor::get_PMBUS_REVISION() {
+  uint8_t rawData[1]; // buffer for 2 bytes
+  write(VICOR_CMD_PMBUS_REVISION, 1, false); // Write I2C command
+  uint8_t ret = readData(rawData, 1); // Read data from register READ_POUT
+  Serial.println(rawData[0], HEX);
 }

@@ -57,7 +57,7 @@
 #define DISABLE_FAULT                 0xD7 // Disable overvoltage, overcurrent or undervoltage supervisory faults
 
 // Default register values
-#define DEFAULT_ADDRESS             0x5F
+#define DEFAULT_ADDRESS             0x51
 #define DEFAULT_PAGE                0x00
 #define DEFAULT_OPERATION           0x80
 #define DEFAULT_CAPABILITY          0x20
@@ -92,17 +92,12 @@ private:
     uint8_t _address;
     
     /**
-    * @brief Write commands to the sensor chip
-    * @param cmd  chip command
-    * @param size  The number of command data, 8 digits for one data.
-    */
-    void writeCommand(uint16_t cmd,size_t size);
-    /**
     * @brief Transport data to chip
     * @param Data address
     * @param Data length
     */
-    void write(const void* pBuf,size_t size);
+    void write(uint8_t * pBuf,size_t size, bool sendStop);
+    void write(uint8_t pBuf,size_t size, bool sendStop);
     /**
     * @brief Write command to sensor chip.
     * @param pBuf  The data contained in the command.
@@ -158,6 +153,7 @@ private:
      * the reported value to actual value in seconds.
      */
     void convert_raw_TON_DELAY();
+    
     
     // TODO: function to read status byte
     // TODO: function to read status word
@@ -248,8 +244,13 @@ public:
         uint16_t rout; // Low-voltage side output resistance
         uint16_t temperature; // Internal temperature in °C.
         uint16_t kfactor;     // K factor
-        uint16_t tdelay;      // Start up delay in addition to fixed delay
+        int16_t tdelay;      // Start up delay in addition to fixed delay
     } sData_t;
+
+    enum PAGE_DATA_BYTE {
+        page_zero = 0x00,
+        page_one = 0x01
+    };
 
     /*!
    * @brief Construct the function
@@ -257,12 +258,6 @@ public:
    * @param address device I2C address.
    */
     Vicor(TwoWire *pWire = &Wire, uint8_t address = DEFAULT_ADDRESS);
-
-    /**
-    * @brief Read the serial number of the chip
-    * @return 32-digit serial number
-    */
-    uint32_t  readSerialNumber();
 
     /**
     * @brief Reads HI-side voltage. 
@@ -284,8 +279,9 @@ public:
     uint16_t get_TON_DELAY();
     uint16_t get_READ_POUT();
     uint16_t get_MFR_VIN_MIN();
+    void get_PMBUS_REVISION();
     
-    void write_PAGE();
+    void write_PAGE(uint8_t data_byte);
 
     sStatusData_t read_status_word();
 

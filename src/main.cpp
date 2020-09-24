@@ -5,7 +5,7 @@ Vicor vicor;
 
 void setup() {
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   //Initialize the chip
 
   while (!Serial) {
@@ -50,8 +50,10 @@ void loop() {
 
   Serial.print("Minimum rated high side voltage: ");
   Serial.println(vicor.get_MFR_VIN_MIN());
+  
+  //vicor.get_PMBUS_REVISION();
 
-  vicor.write_PAGE();
+  
   
   vicor.read_status_word();
   Serial.print("\n");
