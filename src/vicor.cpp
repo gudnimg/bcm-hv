@@ -3,17 +3,21 @@
 Vicor::Vicor(TwoWire *pWire, uint8_t address){
     _pWire   = pWire;
     _address = address;
+
+    // Initalise structures
+    memset(&sStatusIOUT_t, DEFAULT_STATUS_IOUT, sizeof sStatusIOUT_t);
+    memset(&sStatusInput_t, DEFAULT_STATUS_INPUT, sizeof sStatusInput_t);
+    memset(&sStatusTemperature_t, DEFAULT_STATUS_TEMPERATURE, sizeof sStatusTemperature_t);
+    memset(&sStatusCML_t, DEFAULT_STATUS_CML, sizeof sStatusCML_t);
+    memset(&sStatusSpecific_t, DEFAULT_STATUS_MFR_SPECIFIC, sizeof sStatusSpecific_t);
+    memset(&sData_t, 0, sizeof sData_t);
 }
 
 int Vicor::begin() 
 {
   _pWire->begin(DEFAULT_ADDRESS);
   _pWire->setClock(400000); // Set i2c clock frequency to 400kHz
-  /*uint8_t data[2];
-  if(readSerialNumber() == 0){
-    Serial.println("bus data access error");
-    return ERR_DATA_BUS;
-   }*/
+  // TODO: add check here to see if device is active.
   return ERR_OK;
 }
 
@@ -212,4 +216,8 @@ void Vicor::get_PMBUS_REVISION() {
   write(VICOR_CMD_PMBUS_REVISION, 1, false); // Write I2C command
   uint8_t ret = readData(rawData, 1); // Read data from register READ_POUT
   Serial.println(rawData[0], HEX);
+}
+
+void Vicor::clear_faults() {
+  write(VICOR_CMD_CLEAR_FAULTS, 1, true); // Write I2C command
 }

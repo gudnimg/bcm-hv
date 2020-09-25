@@ -86,78 +86,6 @@
 
 class Vicor
 {
-private:
-    /* data */
-    TwoWire *_pWire;
-    uint8_t _address;
-    
-    /**
-    * @brief Transport data to chip
-    * @param Data address
-    * @param Data length
-    */
-    void write(uint8_t * pBuf,size_t size, bool sendStop);
-    void write(uint8_t pBuf,size_t size, bool sendStop);
-    /**
-    * @brief Write command to sensor chip.
-    * @param pBuf  The data contained in the command.
-    * @param size  Number of command data
-    * @return Return 0 indicates the successful read, other return values suggest unsuccessful read.
-    */
-    uint8_t readData(void *pBuf, size_t size);
-
-    /**
-     * @brief Reads READ_VIN register from BCM module and converts
-     * the reported value to actual value in Volts.
-     */ 
-    void convert_raw_READ_VIN();
-
-    /**
-     * @brief Reads READ_IIN register from BCM module and converts
-     * the reported value to actual value in Amps.
-     */
-    void convert_raw_READ_IIN();
-
-    /**
-     * @brief Reads READ_VOUT register from BCM module and converts
-     * the reported value to actual value in Volts.
-     */
-    void convert_raw_READ_VOUT();
-
-    /**
-     * @brief Reads READ_IOUT register from BCM module and converts
-     * the reported value to actual value in Amps.
-     */
-    void convert_raw_READ_IOUT();
-
-    /**
-     * @brief Reads READ_BCM_ROUT register from BCM module and converts
-     * the reported value to actual value in Ohms.
-     */
-    void convert_raw_READ_BCM_ROUT();
-
-    /**
-     * @brief Reads READ_TEMPERATURE_1 register from BCM module and converts
-     * the reported value to actual value in °C.
-     */
-    void convert_raw_READ_TEMPERATURE_1();
-
-    /**
-     * @brief Reads READ_K_FACTOR register from BCM module and converts
-     * the reported value to actual value in V/V.
-     */
-    void convert_raw_READ_K_FACTOR();
-
-    /**
-     * @brief Reads TON_DELAY register from BCM module and converts
-     * the reported value to actual value in seconds.
-     */
-    void convert_raw_TON_DELAY();
-    
-    
-    // TODO: function to read status byte
-    // TODO: function to read status word
-
 public:
     #define ERR_OK             0      //No error
     #define ERR_DATA_BUS      -1      //Data bus error
@@ -285,11 +213,117 @@ public:
 
     sStatusData_t read_status_word();
 
+    /**
+     * @brief This command clears all status bits that have been previously set.
+     * Persistent or active faults are re-asserted again once cleared. All
+     * faults are latched once asserted in the BCM controller. 
+     * 
+     * Registered faults will not be cleared when shutting down the BCM
+     * powertrain by recycling the BCM high side voltage or sending
+     * the OPERATION command
+     */ 
+    void clear_faults();
+
      /**
     * @brief Initialize the function
     * @return Return 0 indicates a successful initialization, while other values indicates failure and return to error code.
     */
     int begin();
+
+private:
+    /* data */
+    TwoWire *_pWire;  // Wire library.
+    uint8_t _address; // BCM module's I2C address.
+    
+    /**
+    * @brief Writes bytes with I2C. The function:
+    * 1. Creates a start condition.
+    * 2. Sends the Device Address with write bit.
+    * 3. Sends the contents of pBuf (a command byte for example).
+    * 4. I2C bus is either stopped or a repeated start condition is created.
+    * 
+    * @param pBuf byte array of type uint8_t. Do not include the Device Address.
+    *             This array should only contain command bytes and data bytes.
+    * @param size number of bytes to write.
+    * @param sendStop if true: the function sends a Stop command. If false: a repeated start condtion is created.
+    */
+    void write(uint8_t* pBuf, size_t size, bool sendStop);
+
+    /**
+    * @brief Writes bytes with I2C. The function:
+    * 1. Creates a start condition.
+    * 2. Sends the Device Address with write bit.
+    * 3. Sends the contents of pBuf (a command byte for example).
+    * 4. I2C bus is either stopped or a repeated start condition is created.
+    * 
+    * @param pBuf a single byte of type uint8_t. Do not include the Device Address.
+    *             This array should only contain command bytes and data bytes.
+    * @param size number of bytes to write.
+    * @param sendStop if true: the function sends a Stop command. If false: a repeated start condtion is created.
+    */
+    void write(uint8_t pBuf, size_t size, bool sendStop);
+
+    /**
+    * @brief Write command to sensor chip.
+    * @param pBuf  The data contained in the command.
+    * @param size  Number of command data
+    * @return Return 0 indicates the successful read, other return values suggest unsuccessful read.
+    */
+    uint8_t readData(void *pBuf, size_t size);
+
+    /**
+     * @brief Reads READ_VIN register from BCM module and converts
+     * the reported value to actual value in Volts.
+     */ 
+    void convert_raw_READ_VIN();
+
+    /**
+     * @brief Reads READ_IIN register from BCM module and converts
+     * the reported value to actual value in Amps.
+     */
+    void convert_raw_READ_IIN();
+
+    /**
+     * @brief Reads READ_VOUT register from BCM module and converts
+     * the reported value to actual value in Volts.
+     */
+    void convert_raw_READ_VOUT();
+
+    /**
+     * @brief Reads READ_IOUT register from BCM module and converts
+     * the reported value to actual value in Amps.
+     */
+    void convert_raw_READ_IOUT();
+
+    /**
+     * @brief Reads READ_BCM_ROUT register from BCM module and converts
+     * the reported value to actual value in Ohms.
+     */
+    void convert_raw_READ_BCM_ROUT();
+
+    /**
+     * @brief Reads READ_TEMPERATURE_1 register from BCM module and converts
+     * the reported value to actual value in °C.
+     */
+    void convert_raw_READ_TEMPERATURE_1();
+
+    /**
+     * @brief Reads READ_K_FACTOR register from BCM module and converts
+     * the reported value to actual value in V/V.
+     */
+    void convert_raw_READ_K_FACTOR();
+
+    /**
+     * @brief Reads TON_DELAY register from BCM module and converts
+     * the reported value to actual value in seconds.
+     */
+    void convert_raw_TON_DELAY();
+    
+    
+    // TODO: function to read status byte
+    // TODO: function to read status word
+
+
 };
 
 #endif
