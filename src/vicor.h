@@ -47,7 +47,7 @@
 #define VICOR_CMD_MFR_SERIAL          0x9E // Internal controller or BCM serial number
 #define VICOR_CMD_MFR_VIN_MIN         0xA0 // Minimum rated high side voltage
 #define VICOR_CMD_MFR_VIN_MAX         0xA1 // Maximum rated high side voltage
-#define VICOR_CMD_MFR_VOU_MIN         0xA4 // Minimum rated low side voltage
+#define VICOR_CMD_MFR_VOUT_MIN         0xA4 // Minimum rated low side voltage
 #define VICOR_CMD_MFR_VOUT_MAX        0xA5 // Maximum rated low side voltage
 #define VICOR_CMD_MFR_IOUT_MAX        0xA6 // Maximum rated low side current
 #define VICOR_CMD_MFR_POUT_MAX        0xA7 // Maximum rated low side power
@@ -164,15 +164,15 @@ public:
 
     // Data structure for measurement data.
     struct {
-        uint16_t vin;  // HI-side voltage
-        uint16_t iin;  // HI-side current
-        uint16_t vout; // LO-side voltage
-        uint16_t iout; // LO-side current
-        uint16_t pout; // LO-side power
-        uint16_t rout; // Low-voltage side output resistance
-        uint16_t temperature; // Internal temperature in °C.
-        uint16_t kfactor;     // K factor
-        int16_t tdelay;      // Start up delay in addition to fixed delay
+        float vin;  // HI-side voltage. Range: 130V to 780V
+        float iin;  // HI-side current Range: -0.85A to 4.4A
+        float vout; // LO-side voltage Range: 8.125V to 48.75V
+        float iout; // LO-side current: -13.6A to 70A
+        int16_t pout; // LO-side power
+        float rout; // Low-voltage side output resistance. Range: 5mOhm to 40mOhm.
+        int16_t temperature; // Internal temperature in °C. Range: -55°C to 130°C.
+        float kfactor;     // K factor
+        float tdelay;      // Start up delay in addition to fixed delay
     } sData_t;
 
     enum PAGE_DATA_BYTE {
@@ -191,26 +191,82 @@ public:
     * @brief Reads HI-side voltage. 
     * @return the actual, corrected measurement.
     */
-    uint16_t get_READ_VIN();
+    float get_READ_VIN();
 
     /**
     * @brief Reads HI-side current. 
     * @return the actual, corrected measurement.
     */
-    uint16_t get_READ_IIN();
+    float get_READ_IIN();
 
-    uint16_t get_READ_VOUT();
-    uint16_t get_READ_IOUT();
-    uint16_t get_READ_BCM_ROUT();
-    uint16_t get_READ_TEMPERATURE_1();
-    uint16_t get_READ_K_FACTOR();
-    uint16_t get_TON_DELAY();
-    uint16_t get_READ_POUT();
-    uint16_t get_MFR_VIN_MIN();
+    /**
+    * @brief Reads LO-side voltage. 
+    * @return the actual, corrected measurement.
+    */
+    float get_READ_VOUT();
+
+    /**
+    * @brief Reads LO-side current. 
+    * @return the actual, corrected measurement.
+    */
+    float get_READ_IOUT();
+
+    /**
+    * @brief Reads LO-side output resistance. 
+    * @return the actual, corrected measurement.
+    */
+    float get_READ_BCM_ROUT();
+
+    /**
+    * @brief Reads the BCM4414 module's internal temperature. 
+    * @return the actual, corrected measurement.
+    */
+    int16_t get_READ_TEMPERATURE_1();
+
+    /**
+    * @brief Reads the BCM4414 module's K factor. 
+    * @return the actual, corrected measurement.
+    */
+    float get_READ_K_FACTOR();
+
+    /**
+    * @brief Reads the BCM4414 module's time on delay. 
+    * @return the actual, corrected measurement.
+    */
+    float get_TON_DELAY();
+
+    /**
+    * @brief Reads the BCM4414 module's output power on LO-side. 
+    * @return the actual, corrected measurement.
+    */
+    int16_t get_READ_POUT();
+
+    /**
+    * @brief Reads the BCM4414 module's lowest HI-side voltage set by Vicor. 
+    * @return the actual, corrected measurement.
+    */
+    int16_t get_MFR_VIN_MIN();
+    int16_t get_MFR_VIN_MAX();
+    int16_t get_MFR_VOUT_MIN();
+    int16_t get_MFR_VOUT_MAX();
+    int16_t get_MFR_IOUT_MAX();
+    int16_t get_MFR_POUT_MAX();
+
+    /**
+    * @brief Reads the PMbus revision.
+    * @return Should always return 0x22. (Can be useful to test communication).
+    */
     void get_PMBUS_REVISION();
     
+    /**
+    * @brief writes a PAGE command and a date byte. Only use this to change the Page mode.
+    * @param data_byte either 0x00 or 0x01
+    */
     void write_PAGE(uint8_t data_byte);
 
+    /**
+    * @brief Reads the status word register.
+    */
     sStatusData_t read_status_word();
 
     /**
@@ -223,6 +279,35 @@ public:
      * the OPERATION command
      */ 
     void clear_faults();
+
+    void operation();
+
+    void read_CML();
+
+    void read_status_mfr();
+
+    /* STATUS IOUT
+    Bit  | 0 | 1 | 2 | 3 | 4 |        5        | 6 |       7       |
+    Name | x | x | x | x | x | IOUT_OC_WARNING | x | IOUT_OC_FAULT |
+    */
+    void read_status_iout();
+
+    void read_status_input();
+
+    void read_status_temperature();
+
+    void print_status_word();
+
+    void print_mfr_id();
+    void print_mfr_revision();
+    void print_mfr_model();
+    void print_mfr_location();
+    void print_mfr_date();
+    void print_mfr_serial();
+
+    void read_capability();
+
+    void write_time_on_delay();
 
      /**
     * @brief Initialize the function
@@ -269,7 +354,7 @@ private:
     * @param size  Number of command data
     * @return Return 0 indicates the successful read, other return values suggest unsuccessful read.
     */
-    uint8_t readData(void *pBuf, size_t size);
+    uint8_t readData(uint8_t *pBuf, uint8_t size);
 
     /**
      * @brief Reads READ_VIN register from BCM module and converts
