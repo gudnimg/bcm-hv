@@ -186,6 +186,7 @@ public:
    * @param address device I2C address.
    */
     Vicor(TwoWire *pWire = &Wire, uint8_t address = DEFAULT_ADDRESS);
+    Vicor(uint8_t address);
 
     /**
     * @brief Reads HI-side voltage. 
