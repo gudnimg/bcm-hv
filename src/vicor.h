@@ -91,7 +91,7 @@ public:
     #define ERR_DATA_BUS      -1      //Data bus error
     #define ERR_IC_VERSION    -2      //Chip version does not match
 
-    typedef struct {
+    typedef struct sStatusData_t {
         uint8_t                     : 1; // UNSUPPORTED - VOUT FAULT OR WARNING
         uint8_t iout_pout_fault     : 1; // IOUT/POUT FAULT OR WARNING
         uint8_t input_fault         : 1; // INPUT FAULT OR WARNING
@@ -108,9 +108,9 @@ public:
         uint8_t temperature_fault   : 1; // TEMPERATURE FAULT OR WARNING
         uint8_t pmbus_communication_event : 1;
         uint8_t unknown_fault       : 1; // NONE OF THE ABOVE
-    } __attribute__ ((packed)) sStatusData_t;
+    };
 
-    struct {
+    struct sStatusIOUT_t{
         uint8_t iout_oc_fault   : 1;
         uint8_t                 : 1; // UNSUPPORTED - IOUT_OC_LV_FAULT
         uint8_t iout_oc_warning : 1;
@@ -119,10 +119,10 @@ public:
         uint8_t                 : 1; // UNSUPPORTED - In Power Limiting Mode
         uint8_t                 : 1; // UNSUPPORTED - POUT_OP_FAULT
         uint8_t                 : 1; // UNSUPPORTED - POUT_OP_WARNING
-    } sStatusIOUT_t;
+    };
 
     // A one indicates a fault.
-    struct {
+    struct sStatusInput_t {
         uint8_t vin_ov_fault   : 1;
         uint8_t vin_ov_warning : 1;
         uint8_t                : 1; // UNSUPPORTED - VIN_UV_WARNING
@@ -131,20 +131,20 @@ public:
         uint8_t                : 1; // UNSUPPORTED - IIN_OC_FAULT
         uint8_t                : 1; // UNSUPPORTED - IIN_OC_WARNING
         uint8_t                : 1; // UNSUPPORTED - PIN_OP_WARNING
-    } sStatusInput_t;
+    };
 
     // A one indicates a fault.
-    struct {
+    struct sStatusTemperature_t {
         uint8_t ot_fault   : 1;
         uint8_t ot_warning : 1;
         uint8_t            : 1; // UNSUPPORTED - UT_WARNING
         uint8_t ut_fault   : 1;
         uint8_t reserved   : 4; // Reserved bits
-    } sStatusTemperature_t;
+    };
 
     // The STATUS_CML data byte will be asserted when an unsupported
     // PMBus® command or data or other communication fault occurs.
-    struct {
+    struct sStatusCML_t {
         uint8_t cmd_stat_rx  : 1; // Invalid Or Unsupported Command Received
         uint8_t data_stat_rx : 1;
         uint8_t              : 1; // UNSUPPORTED - Packet Error Check Failed
@@ -153,17 +153,17 @@ public:
         uint8_t reserved     : 1; // Reserved bit
         uint8_t other        : 1; // Other Communication Faults
         uint8_t              : 1; // UNSUPPORTED - Other Memory Or Logic Fault
-    } sStatusCML_t;
+    };
 
-    struct {
+    struct sStatusSpecific_t {
         uint8_t reserved          : 5; // Reserved bits
         uint8_t bcm_uart_cml      : 1; // BCM UART CML
         uint8_t shutdown_fault    : 1; // Hardware Protections Shutdown Fault
         uint8_t reverse_operation : 1; // BCM Reverse Operation.
-    } sStatusSpecific_t;
+    };
 
     // Data structure for measurement data.
-    struct {
+    struct sData_t {
         float vin;  // HI-side voltage. Range: 130V to 780V
         float iin;  // HI-side current Range: -0.85A to 4.4A
         float vout; // LO-side voltage Range: 8.125V to 48.75V
@@ -173,7 +173,7 @@ public:
         int16_t temperature; // Internal temperature in °C. Range: -55°C to 130°C.
         float kfactor;     // K factor
         float tdelay;      // Start up delay in addition to fixed delay
-    } sData_t;
+    };
 
     enum PAGE_DATA_BYTE {
         page_zero = 0x00,
@@ -265,11 +265,6 @@ public:
     void write_PAGE(uint8_t data_byte);
 
     /**
-    * @brief Reads the status word register.
-    */
-    sStatusData_t read_status_word();
-
-    /**
      * @brief This command clears all status bits that have been previously set.
      * Persistent or active faults are re-asserted again once cleared. All
      * faults are latched once asserted in the BCM controller. 
@@ -319,6 +314,14 @@ private:
     /* data */
     TwoWire *_pWire;  // Wire library.
     uint8_t _address; // BCM module's I2C address.
+    uint8_t _page;    // Page data byte
+
+    sStatusInput_t status_input;
+    sStatusIOUT_t status_iout;
+    sStatusTemperature_t status_temperature;
+    sStatusCML_t status_cml;
+    sStatusSpecific_t status_specific;
+    sData_t measurement_data;
     
     /**
     * @brief Writes bytes with I2C. The function:
