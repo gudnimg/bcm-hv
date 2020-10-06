@@ -7,9 +7,9 @@ Vicor::Vicor(TwoWire *pWire, uint8_t address){
     _page    = DEFAULT_PAGE;
     
     // Initalise structures
-    memset(&status_iout, DEFAULT_STATUS_IOUT, sizeof status_iout);
+    memset(&status_iout, DEFAULT_STATUS_IOUT, sizeof(status_iout));
     memset(&status_input, DEFAULT_STATUS_INPUT, sizeof status_input);
-    memset(&status_temperature, DEFAULT_STATUS_TEMPERATURE, sizeof status_temperature);
+    memset(&status_temperature, DEFAULT_STATUS_TEMPERATURE, sizeof(status_temperature));
     memset(&status_cml, DEFAULT_STATUS_CML, sizeof status_cml);
     memset(&status_specific, DEFAULT_STATUS_MFR_SPECIFIC, sizeof status_specific);
     measurement_data = {0};
@@ -52,6 +52,7 @@ int16_t Vicor::get_READ_TEMPERATURE_1() {
   uint8_t rawData[2]; // buffer for 2 bytes
   write(VICOR_CMD_READ_TEMPERATURE_1, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_TEMPERATURE_1
+
   measurement_data.temperature = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
   return measurement_data.temperature;
 }
@@ -85,7 +86,7 @@ int16_t Vicor::get_MFR_VIN_MIN() {
 }
 
 int16_t Vicor::get_MFR_VIN_MAX() {
-  byte rawData[2]; // buffer for 2 bytes
+  uint8_t rawData[2]; // buffer for 2 bytes
   write(VICOR_CMD_MFR_VIN_MAX, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_POUT
 
@@ -94,7 +95,7 @@ int16_t Vicor::get_MFR_VIN_MAX() {
 }
 
 int16_t Vicor::get_MFR_VOUT_MIN() {
-  byte rawData[2]; // buffer for 2 bytes
+  uint8_t rawData[2]; // buffer for 2 bytes
   write(VICOR_CMD_MFR_VOUT_MIN, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_POUT
 
@@ -131,36 +132,52 @@ int16_t Vicor::get_MFR_POUT_MAX() {
 }
 
 // This overload allows a single byte as input for pBuf.
-void Vicor::write(uint8_t pBuf, size_t size, bool sendStop) {
-  write(&pBuf, size, sendStop);
+bool Vicor::write(uint8_t pBuf, size_t size, bool sendStop) {
+  return write(&pBuf, size, sendStop);
 }
 
-void Vicor::write(uint8_t* pBuf, size_t size, bool sendStop)
+bool Vicor::write(uint8_t* pBuf, size_t size, bool sendStop)
 {
-  if (pBuf == NULL) {
+  if (pBuf == nullptr) {
     Serial.println("pBuf ERROR!! : null pointer");
   }
-  //retry_write:
+
   _pWire->beginTransmission(_address); // Start conditon + Device Address + Write bit
   for(size_t i = 0; i < size; ++i){
     _pWire->write(pBuf[i]);
-    delay(1);
   }
   uint8_t ret = _pWire->endTransmission(sendStop); // use false to not send stop condition
 
-  if (ret != 0)
-  {
-    /*Serial.print("Error ");
-    Serial.print(ret);
-    Serial.println(" in endTransmission().");*/
-    //goto retry_write;
-  }
+  return ret;
 }
 
-void Vicor::write_PAGE(uint8_t data_byte){
-  uint8_t rawData[2] = {VICOR_CMD_PAGE, data_byte};
-  write(rawData, 2, true);
+bool Vicor::write_PAGE(uint8_t data_byte){
 
+  uint8_t rawData[2] = {VICOR_CMD_PAGE, data_byte};
+  uint8_t error = write(rawData, 2, true);
+
+  read_CML();
+
+  if (error != 0)
+  {
+    switch (error)
+    {
+    case 1:
+      Serial.println("Length too long for buffer.");
+      break;
+    case 2:
+      Serial.println("Address send, NACK received.");
+      break;
+    case 3:
+      Serial.println("Data send, NACK received.");
+      break;
+    case 4:
+      Serial.println("Other twi error.");
+      break;
+    }
+    return false;
+  }
+  
   // Read back PAGE byte.
   uint8_t buffer[1]; 
   write((uint8_t)VICOR_CMD_PAGE, 1, false); // Write I2C command
@@ -168,18 +185,17 @@ void Vicor::write_PAGE(uint8_t data_byte){
   if (buffer[0] != data_byte)
   {
     Serial.println("Error. Writing page data byte failed.");
-    return;
+    //Serial.println(buffer[0]);
+    delay(1000);
+    //goto retry_again;
   }
 
   _page = data_byte; // Update page data byte.
 }
 
 uint8_t Vicor::readData(uint8_t *pBuf, uint8_t size) {
-  if (pBuf == nullptr) {
-    Serial.println("pBuf ERROR!! : null pointer");
-  }
   uint8_t len = 0;
-  //_pWire->beginTransmission(_address);
+  
   _pWire->requestFrom(_address, (uint8_t)size, (uint8_t)true);
   while(_pWire->available())  
   {
@@ -190,8 +206,11 @@ uint8_t Vicor::readData(uint8_t *pBuf, uint8_t size) {
 }
 
 void Vicor::convert_raw_READ_VIN() {
-
-  if (_page != 0x01) write_PAGE(0x01); // VIN can only be read when page is 0x01.
+  uint8_t error = 0;
+  if (_page != 0x01) {
+    error = write_PAGE(0x01); // VIN can only be read when page is 0x01.
+    if (error != 0) return;
+  }
 
   uint8_t rawData[2];                           // buffer for 2 bytes
   write(VICOR_CMD_READ_VIN, 1, false);          // Write I2C command
@@ -209,8 +228,11 @@ void Vicor::convert_raw_READ_IIN() {
 }
 
 void Vicor::convert_raw_READ_VOUT() {
-
-  if (_page != 0x01) write_PAGE(0x01); // VOUT can only be read when page is 0x01.
+  uint8_t error = 0;
+  if (_page != 0x01) {
+    write_PAGE(0x01); // VOUT can only be read when page is 0x01.
+    if (error != 0) return;
+  }
 
   uint8_t rawData[2]; // buffer for 2 bytes
   write(VICOR_CMD_READ_VOUT, 1, false); // Write I2C command
@@ -223,7 +245,7 @@ void Vicor::convert_raw_READ_IOUT() {
   uint8_t rawData[2]; // buffer for 2 bytes
   write(VICOR_CMD_READ_IOUT, 1, false); // Write I2C command
   readData(rawData, 2); // Read data from register READ_IOUT
-  measurement_data.iout = (rawData[0] << 8) | rawData[1]; // Combine high byte and low byte.
+  measurement_data.iout = ((rawData[0] << 8) | rawData[1]); // Combine high byte and low byte.
   measurement_data.iout /= 100.f; // I_actual = I_reported * 10^-2 (A)
 }
 
@@ -266,7 +288,7 @@ void Vicor::get_PMBUS_REVISION() {
 
   uint8_t rawData[1]; // buffer for 2 bytes
   write(VICOR_CMD_PMBUS_REVISION, 1, false); // Write I2C command
-  uint8_t ret = readData(rawData, 1); // Read data from register READ_POUT
+  readData(rawData, 1); // Read data from register READ_POUT
   Serial.print("PMbus Revision: 0x");
   Serial.println(rawData[0], HEX);
 }
@@ -277,7 +299,11 @@ void Vicor::clear_faults() {
 
 void Vicor::operation() {
 
-  if (_page != 0x01) write_PAGE(0x01); // Ensures we can both Read and Write.
+  clear_faults();
+  if (_page != 0x01) {
+    uint8_t error = write_PAGE(0x01); // Ensures we can both Read and Write.
+    if (error != 0) return;
+  }
 
   uint8_t rawData[2] = {(uint8_t)VICOR_CMD_OPERATION,(uint8_t)0x80}; // buffer for 2 bytes
   write(rawData, 2, true); // Write I2C command
@@ -285,23 +311,28 @@ void Vicor::operation() {
   // Read back Operation mode.
   uint8_t buffer[1];
   write((uint8_t)VICOR_CMD_OPERATION, 1, false); // Write I2C command
-  readData(buffer, 1); // Read data from register READ_POUT
-  if (bitRead(buffer[0], 0) != 1)
+  readData(buffer, 1); // Read data from register READ_POUT*/
+  if (bitRead(buffer[0], 7) != 1)
   {
-    Serial.println(buffer[0], HEX);
     Serial.println("Error. Failed to turn the Module on.");
   }
 }
 
 void Vicor::read_CML() {
 
-  if (_page != 0x00) write_PAGE(0x00); // Ensures we can both Read and Write.
+  //if (_page != 0x00) write_PAGE(0x00); // Ensures we can both Read and Write.
+  uint8_t write_buffer[2] = {VICOR_CMD_STATUS_CML, 0x7F};
+  write(write_buffer, 2, true); // Write I2C command
 
-  uint8_t rawData[1]; // buffer for 2 bytes
+  uint8_t buffer[1];
   write(VICOR_CMD_STATUS_CML, 1, false); // Write I2C command
-  readData(rawData, 1); // Read data from register READ_POUT
+  readData(buffer, 1); // Read data from register READ_POUT
   Serial.print("Status CML: 0x");
-  Serial.println(rawData[0], HEX);
+  Serial.println(buffer[0], HEX);
+
+  if (buffer[0] & 0x02) Serial.println("CML error: Other Communication Faults.");
+  if (buffer[0] & 0x40) Serial.println("CML error: Invalid or Unsupported Data Received.");
+  if (buffer[0] & 0x80) Serial.println("CML error: Invalid or Unsupported Command Received.");  
 }
 
 void Vicor::read_status_mfr() {
@@ -313,14 +344,24 @@ void Vicor::read_status_mfr() {
 }
 
 void Vicor::read_status_iout() {
+  if (_page != 0x01) write_PAGE(0x01); // Ensures we can read.
+  uint8_t write_buffer[2] = {VICOR_CMD_STATUS_IOUT, 0x00};
+  write(write_buffer, 2, true); // Write I2C command
+
+  read_CML();
+
   uint8_t rawData[1]; // buffer for 2 bytes
   write(VICOR_CMD_STATUS_IOUT, 1, false); // Write I2C command
   readData(rawData, 1); // Read data from register READ_POUT
   Serial.print("Status Iout: 0x");
   Serial.println(rawData[0], HEX);
+
+  read_CML();
 }
 
 void Vicor::read_status_input() {
+  uint8_t write_buffer[2] = {VICOR_CMD_STATUS_INPUT, 0x00};
+  write(write_buffer, 2, true); // Write I2C command
   uint8_t rawData[1]; // buffer for 2 bytes
   write(VICOR_CMD_STATUS_INPUT, 1, false); // Write I2C command
   readData(rawData, 1); // Read data from register READ_POUT
@@ -373,7 +414,7 @@ void Vicor::print_mfr_id() {
   Serial.print("MFR ID: ");
   for (int8_t i = 1; i < len; i++)
   {
-    if ((char) buffer[i] != NULL) Serial.print((char) buffer[i]);
+    if ((char) buffer[i] != '\0') Serial.print((char) buffer[i]);
   }
   Serial.println("");
 }
@@ -386,7 +427,7 @@ void Vicor::print_mfr_revision() {
   Serial.print("MFR Revision: ");
   for (int8_t i = 1; i < len; i++)
   {
-    if ((char) buffer[i] != NULL) Serial.print((char) buffer[i]);
+    if ((char) buffer[i] != '\0') Serial.print((char) buffer[i]);
   }
   Serial.println("");
 }
@@ -399,7 +440,7 @@ void Vicor::print_mfr_model() {
   Serial.print("Part Number: ");
   for (int8_t i = 1; i < len; i++)
   {
-    if ((char) buffer[i] != NULL) Serial.print((char) buffer[i]);
+    if ((char) buffer[i] != '\0') Serial.print((char) buffer[i]);
   }
   Serial.println("");
 }
@@ -438,7 +479,41 @@ void Vicor::print_mfr_serial() {
   Serial.print("Serial Number: ");
   for (uint8_t i = 1; i < len; i++)
   {
-    if ((char) buffer[i] != NULL) Serial.print((char) buffer[i]);
+    if ((char) buffer[i] != '\0') Serial.print((char) buffer[i]);
   }
   Serial.println("");
+}
+
+void Vicor::print_vin_ov_fault() {
+  if (_page != 0x01) write_PAGE(0x01); // Ensures we can write.
+  //delay(2000);
+  uint8_t len = 2;
+  uint8_t buffer[len];
+  /*write(VICOR_CMD_VIN_OV_FAULT_LIMIT, 1, false); // Write I2C command
+  delay(3);
+  readData(buffer, len); // Read data from register READ_POUT
+  Serial.print("VIN OV FAULT: ");
+  uint16_t data = (buffer[0] << 8) | buffer[1];
+  Serial.println(data, HEX); // Combine high byte and low byte.*/
+
+  clear_faults();
+  //read_CML();
+
+  /*if (_page != 0x01) write_PAGE(0x01); // Ensures we can write.
+  uint8_t buffer2[3] = {VICOR_CMD_VIN_OV_FAULT_LIMIT, 0x05, 0x00}; // buffer for 2 bytes
+  write(buffer2, 3, true); // Write I2C command*/
+  write(0x57, 1, false); // Write I2C command
+  delay(200);
+  readData(buffer, len); // Read data from register READ_POUT
+  Serial.println("VIN OV FAULT: ");
+  uint16_t data = 0;
+  data = (buffer[0] << 8) | buffer[1];
+  Serial.println(data, HEX); // Combine high byte and low byte.
+}
+
+void Vicor::disable_faults() {
+
+  if (_page != 0x01) write_PAGE(0x01); // Ensures we can both Read and Write.
+  uint8_t write_buffer[3] = {DISABLE_FAULT, 0x00};
+  write(write_buffer, 3, true); // Write I2C command
 }

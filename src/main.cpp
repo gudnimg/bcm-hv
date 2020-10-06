@@ -15,14 +15,19 @@ void setup() {
     Serial.println("Failed to Initialize the chip, please confirm the wire connection");
     delay(1000);
   }
+
+  //vicor.disable_faults();
+  //vicor.read_CML();
+  //Serial.flush();
+  //abort();
+  
+  
 }
 
 void loop() {
-  vicor.clear_faults();
-  vicor.operation();
 
-  //delay(200);
-  Serial.println("PAGE 0x01");
+  //vicor.clear_faults();
+  //vicor.operation();
 
   Serial.print("Input voltage (V):");
   Serial.println(vicor.get_READ_VIN());
@@ -38,7 +43,7 @@ void loop() {
 
   Serial.print("Output resistance (Ohms):");
   Serial.println(vicor.get_READ_BCM_ROUT());
-
+  
   Serial.print("Internal temperature (°C):");
   Serial.println(vicor.get_READ_TEMPERATURE_1());
 
@@ -53,14 +58,11 @@ void loop() {
 
   Serial.print("\n");
 
-  vicor.write_PAGE(0x00);
-  Serial.println("PAGE 0x00");
-
   Serial.print("Min rated HI-side voltage: ");
-  Serial.println(vicor.get_MFR_VIN_MIN());
+  Serial.println(vicor.get_MFR_VIN_MIN(), HEX);
 
   Serial.print("Max rated HI-side voltage: ");
-  Serial.println(vicor.get_MFR_VIN_MAX());
+  Serial.println(vicor.get_MFR_VIN_MAX(), HEX);
 
   Serial.print("Min rated LO-side voltage: ");
   Serial.println(vicor.get_MFR_VOUT_MIN());
@@ -82,10 +84,6 @@ void loop() {
   vicor.print_mfr_date();
   vicor.print_mfr_serial();
 
-  Serial.print("\n");
-  
-  //vicor.read_status_word();
-
   
   vicor.read_CML();
   vicor.read_status_mfr();
@@ -94,7 +92,7 @@ void loop() {
   vicor.read_status_input();
   vicor.read_status_temperature();
   vicor.print_status_word();
-  vicor.clear_faults();
+  vicor.read_CML();
 
   Serial.print("\n");
 

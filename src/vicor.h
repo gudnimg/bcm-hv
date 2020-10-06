@@ -91,75 +91,112 @@ public:
     #define ERR_DATA_BUS      -1      //Data bus error
     #define ERR_IC_VERSION    -2      //Chip version does not match
 
-    typedef struct sStatusData_t {
-        uint8_t                     : 1; // UNSUPPORTED - VOUT FAULT OR WARNING
-        uint8_t iout_pout_fault     : 1; // IOUT/POUT FAULT OR WARNING
-        uint8_t input_fault         : 1; // INPUT FAULT OR WARNING
-        uint8_t status_mfr_specific : 1; // STATUS_MFR_SPECIFIC
-        uint8_t power_good          : 1; // POWER_GOOD Negated*
-        uint8_t                     : 1; // UNSUPPORTED - FAN FAULT OR WARNING
-        uint8_t                     : 1; // UNSUPPORTED - OTHER
-        uint8_t                     : 1; // UNSUPPORTED - UNKNOWN FAULT OR WARNING
-        uint8_t unit_is_busy        : 1;
-        uint8_t unit_is_off         : 1;
-        uint8_t                     : 1; // UNSUPPORTED - VOUT_OV_FAULT
-        uint8_t iout_oc_fault       : 1;
-        uint8_t vin_uv_fault        : 1;
-        uint8_t temperature_fault   : 1; // TEMPERATURE FAULT OR WARNING
-        uint8_t pmbus_communication_event : 1;
-        uint8_t unknown_fault       : 1; // NONE OF THE ABOVE
+    struct sStatusData_t {
+        union {
+            uint16_t all;
+
+            struct {
+                uint8_t                     : 1; // UNSUPPORTED - VOUT FAULT OR WARNING
+                uint8_t iout_pout_fault     : 1; // IOUT/POUT FAULT OR WARNING
+                uint8_t input_fault         : 1; // INPUT FAULT OR WARNING
+                uint8_t status_mfr_specific : 1; // STATUS_MFR_SPECIFIC
+                uint8_t power_good          : 1; // POWER_GOOD Negated*
+                uint8_t                     : 1; // UNSUPPORTED - FAN FAULT OR WARNING
+                uint8_t                     : 1; // UNSUPPORTED - OTHER
+                uint8_t                     : 1; // UNSUPPORTED - UNKNOWN FAULT OR WARNING
+                uint8_t unit_is_busy        : 1;
+                uint8_t unit_is_off         : 1;
+                uint8_t                     : 1; // UNSUPPORTED - VOUT_OV_FAULT
+                uint8_t iout_oc_fault       : 1;
+                uint8_t vin_uv_fault        : 1;
+                uint8_t temperature_fault   : 1; // TEMPERATURE FAULT OR WARNING
+                uint8_t pmbus_communication_event : 1;
+                uint8_t unknown_fault       : 1; // NONE OF THE ABOVE
+            };
+        };
     };
 
     struct sStatusIOUT_t{
-        uint8_t iout_oc_fault   : 1;
-        uint8_t                 : 1; // UNSUPPORTED - IOUT_OC_LV_FAULT
-        uint8_t iout_oc_warning : 1;
-        uint8_t                 : 1; // UNSUPPORTED - IOUT_UC_FAULT
-        uint8_t                 : 1; // UNSUPPORTED - Current Share Fault
-        uint8_t                 : 1; // UNSUPPORTED - In Power Limiting Mode
-        uint8_t                 : 1; // UNSUPPORTED - POUT_OP_FAULT
-        uint8_t                 : 1; // UNSUPPORTED - POUT_OP_WARNING
+        union {
+            uint8_t all;
+            
+            struct {
+                uint8_t iout_oc_fault   : 1;
+                uint8_t                 : 1; // UNSUPPORTED - IOUT_OC_LV_FAULT
+                uint8_t iout_oc_warning : 1;
+                uint8_t                 : 1; // UNSUPPORTED - IOUT_UC_FAULT
+                uint8_t                 : 1; // UNSUPPORTED - Current Share Fault
+                uint8_t                 : 1; // UNSUPPORTED - In Power Limiting Mode
+                uint8_t                 : 1; // UNSUPPORTED - POUT_OP_FAULT
+                uint8_t                 : 1; // UNSUPPORTED - POUT_OP_WARNING
+            };
+        };
     };
 
     // A one indicates a fault.
     struct sStatusInput_t {
-        uint8_t vin_ov_fault   : 1;
-        uint8_t vin_ov_warning : 1;
-        uint8_t                : 1; // UNSUPPORTED - VIN_UV_WARNING
-        uint8_t vin_uv_fault   : 1;
-        uint8_t                : 1; // UNSUPPORTED - Unit Off For Insufficient Input Voltage
-        uint8_t                : 1; // UNSUPPORTED - IIN_OC_FAULT
-        uint8_t                : 1; // UNSUPPORTED - IIN_OC_WARNING
-        uint8_t                : 1; // UNSUPPORTED - PIN_OP_WARNING
+        union {
+            uint8_t all;
+
+            struct {
+                uint8_t vin_ov_fault   : 1;
+                uint8_t vin_ov_warning : 1;
+                uint8_t                : 1; // UNSUPPORTED - VIN_UV_WARNING
+                uint8_t vin_uv_fault   : 1;
+                uint8_t                : 1; // UNSUPPORTED - Unit Off For Insufficient Input Voltage
+                uint8_t                : 1; // UNSUPPORTED - IIN_OC_FAULT
+                uint8_t                : 1; // UNSUPPORTED - IIN_OC_WARNING
+                uint8_t                : 1; // UNSUPPORTED - PIN_OP_WARNING
+            };
+        };
     };
 
     // A one indicates a fault.
     struct sStatusTemperature_t {
-        uint8_t ot_fault   : 1;
-        uint8_t ot_warning : 1;
-        uint8_t            : 1; // UNSUPPORTED - UT_WARNING
-        uint8_t ut_fault   : 1;
-        uint8_t reserved   : 4; // Reserved bits
+        union {
+            uint8_t all;
+
+            struct {
+                uint8_t ot_fault   : 1;
+                uint8_t ot_warning : 1;
+                uint8_t            : 1; // UNSUPPORTED - UT_WARNING
+                uint8_t ut_fault   : 1;
+                uint8_t reserved   : 4; // Reserved bits
+            };
+        };
+        
     };
 
     // The STATUS_CML data byte will be asserted when an unsupported
     // PMBus® command or data or other communication fault occurs.
     struct sStatusCML_t {
-        uint8_t cmd_stat_rx  : 1; // Invalid Or Unsupported Command Received
-        uint8_t data_stat_rx : 1;
-        uint8_t              : 1; // UNSUPPORTED - Packet Error Check Failed
-        uint8_t              : 1; // UNSUPPORTED - Memory Fault Detected
-        uint8_t              : 1; // UNSUPPORTED - Processor Fault Detected
-        uint8_t reserved     : 1; // Reserved bit
-        uint8_t other        : 1; // Other Communication Faults
-        uint8_t              : 1; // UNSUPPORTED - Other Memory Or Logic Fault
+        union {
+            uint8_t all;
+            
+            struct {
+                uint8_t cmd_stat_rx  : 1; // Invalid Or Unsupported Command Received
+                uint8_t data_stat_rx : 1;
+                uint8_t              : 1; // UNSUPPORTED - Packet Error Check Failed
+                uint8_t              : 1; // UNSUPPORTED - Memory Fault Detected
+                uint8_t              : 1; // UNSUPPORTED - Processor Fault Detected
+                uint8_t reserved     : 1; // Reserved bit
+                uint8_t other        : 1; // Other Communication Faults
+                uint8_t              : 1; // UNSUPPORTED - Other Memory Or Logic Fault
+            };
+        };
     };
 
     struct sStatusSpecific_t {
-        uint8_t reserved          : 5; // Reserved bits
-        uint8_t bcm_uart_cml      : 1; // BCM UART CML
-        uint8_t shutdown_fault    : 1; // Hardware Protections Shutdown Fault
-        uint8_t reverse_operation : 1; // BCM Reverse Operation.
+        union {
+            uint8_t all;
+            
+            struct {
+                uint8_t reserved          : 5; // Reserved bits
+                uint8_t bcm_uart_cml      : 1; // BCM UART CML
+                uint8_t shutdown_fault    : 1; // Hardware Protections Shutdown Fault
+                uint8_t reverse_operation : 1; // BCM Reverse Operation.
+            };
+        };
     };
 
     // Data structure for measurement data.
@@ -173,11 +210,6 @@ public:
         int16_t temperature; // Internal temperature in °C. Range: -55°C to 130°C.
         float kfactor;     // K factor
         float tdelay;      // Start up delay in addition to fixed delay
-    };
-
-    enum PAGE_DATA_BYTE {
-        page_zero = 0x00,
-        page_one = 0x01
     };
 
     /*!
@@ -262,7 +294,7 @@ public:
     * @brief writes a PAGE command and a date byte. Only use this to change the Page mode.
     * @param data_byte either 0x00 or 0x01
     */
-    void write_PAGE(uint8_t data_byte);
+    bool write_PAGE(uint8_t data_byte);
 
     /**
      * @brief This command clears all status bits that have been previously set.
@@ -299,6 +331,7 @@ public:
     void print_mfr_location();
     void print_mfr_date();
     void print_mfr_serial();
+    void disable_faults();
 
     void read_capability();
 
@@ -335,7 +368,7 @@ private:
     * @param size number of bytes to write.
     * @param sendStop if true: the function sends a Stop command. If false: a repeated start condtion is created.
     */
-    void write(uint8_t* pBuf, size_t size, bool sendStop);
+    bool write(uint8_t* pBuf, size_t size, bool sendStop);
 
     /**
     * @brief Writes bytes with I2C. The function:
@@ -349,7 +382,7 @@ private:
     * @param size number of bytes to write.
     * @param sendStop if true: the function sends a Stop command. If false: a repeated start condtion is created.
     */
-    void write(uint8_t pBuf, size_t size, bool sendStop);
+    bool write(uint8_t pBuf, size_t size, bool sendStop);
 
     /**
     * @brief Write command to sensor chip.
@@ -407,6 +440,7 @@ private:
      */
     void convert_raw_TON_DELAY();
     
+    void print_vin_ov_fault();
     
     // TODO: function to read status byte
     // TODO: function to read status word
