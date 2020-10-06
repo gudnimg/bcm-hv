@@ -1,6 +1,10 @@
 #include "vicor.h"
 #include <stdio.h>
 
+Vicor::Vicor(uint8_t address) {
+  Vicor(&Wire, address);
+}
+
 Vicor::Vicor(TwoWire *pWire, uint8_t address){
     _pWire   = pWire;
     _address = address;
