@@ -218,7 +218,7 @@ public:
    * @param address device I2C address.
    */
     Vicor(TwoWire *pWire = &Wire, uint8_t address = DEFAULT_ADDRESS);
-    Vicor(uint8_t address);
+    explicit Vicor(uint8_t address);
 
     /**
     * @brief Reads HI-side voltage. 
@@ -325,6 +325,7 @@ public:
     void read_status_temperature();
 
     void print_status_word();
+    void print_status_byte();
 
     void print_mfr_id();
     void print_mfr_revision();
@@ -333,16 +334,10 @@ public:
     void print_mfr_date();
     void print_mfr_serial();
     void disable_faults();
+    void print_vin_ov_fault();
+    void set_all_thresholds();
 
     void read_capability();
-
-    void write_time_on_delay();
-
-     /**
-    * @brief Initialize the function
-    * @return Return 0 indicates a successful initialization, while other values indicates failure and return to error code.
-    */
-    int begin();
 
 private:
     /* data */
@@ -356,6 +351,12 @@ private:
     sStatusCML_t status_cml;
     sStatusSpecific_t status_specific;
     sData_t measurement_data;
+
+     /**
+    * @brief Initialize the function
+    * @return Return 0 indicates a successful initialization, while other values indicates failure and return to error code.
+    */
+    int begin(TwoWire *pWire, uint8_t address);
     
     /**
     * @brief Writes bytes with I2C. The function:
@@ -369,7 +370,7 @@ private:
     * @param size number of bytes to write.
     * @param sendStop if true: the function sends a Stop command. If false: a repeated start condtion is created.
     */
-    bool write(uint8_t* pBuf, size_t size, bool sendStop);
+    uint8_t write(uint8_t* pBuf, size_t size, bool sendStop);
 
     /**
     * @brief Writes bytes with I2C. The function:
@@ -383,7 +384,7 @@ private:
     * @param size number of bytes to write.
     * @param sendStop if true: the function sends a Stop command. If false: a repeated start condtion is created.
     */
-    bool write(uint8_t pBuf, size_t size, bool sendStop);
+    uint8_t write(uint8_t pBuf, size_t size, bool sendStop);
 
     /**
     * @brief Write command to sensor chip.
@@ -441,7 +442,7 @@ private:
      */
     void convert_raw_TON_DELAY();
     
-    void print_vin_ov_fault();
+    
     
     // TODO: function to read status byte
     // TODO: function to read status word
