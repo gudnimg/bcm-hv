@@ -96,22 +96,22 @@ public:
             uint16_t all;
 
             struct {
-                uint8_t                     : 1; // UNSUPPORTED - VOUT FAULT OR WARNING
-                uint8_t iout_pout_fault     : 1; // IOUT/POUT FAULT OR WARNING
-                uint8_t input_fault         : 1; // INPUT FAULT OR WARNING
-                uint8_t status_mfr_specific : 1; // STATUS_MFR_SPECIFIC
-                uint8_t power_good          : 1; // POWER_GOOD Negated*
-                uint8_t                     : 1; // UNSUPPORTED - FAN FAULT OR WARNING
-                uint8_t                     : 1; // UNSUPPORTED - OTHER
-                uint8_t                     : 1; // UNSUPPORTED - UNKNOWN FAULT OR WARNING
-                uint8_t unit_is_busy        : 1;
-                uint8_t unit_is_off         : 1;
-                uint8_t                     : 1; // UNSUPPORTED - VOUT_OV_FAULT
-                uint8_t iout_oc_fault       : 1;
-                uint8_t vin_uv_fault        : 1;
-                uint8_t temperature_fault   : 1; // TEMPERATURE FAULT OR WARNING
-                uint8_t pmbus_communication_event : 1;
                 uint8_t unknown_fault       : 1; // NONE OF THE ABOVE
+                uint8_t pmbus_communication_event : 1;
+                uint8_t temperature_fault   : 1; // TEMPERATURE FAULT OR WARNING
+                uint8_t vin_uv_fault        : 1;
+                uint8_t iout_oc_fault       : 1;
+                uint8_t                     : 1; // UNSUPPORTED - VOUT_OV_FAULT
+                uint8_t unit_is_off         : 1;
+                uint8_t unit_is_busy        : 1;
+                uint8_t                     : 1; // UNSUPPORTED - UNKNOWN FAULT OR WARNING
+                uint8_t                     : 1; // UNSUPPORTED - OTHER
+                uint8_t                     : 1; // UNSUPPORTED - FAN FAULT OR WARNING
+                uint8_t power_good          : 1; // POWER_GOOD Negated*
+                uint8_t status_mfr_specific : 1; // STATUS_MFR_SPECIFIC
+                uint8_t input_fault         : 1; // INPUT FAULT OR WARNING
+                uint8_t iout_pout_fault     : 1; // IOUT/POUT FAULT OR WARNING
+                uint8_t                     : 1; // UNSUPPORTED - VOUT FAULT OR WARNING
             };
         };
     };
@@ -121,14 +121,14 @@ public:
             uint8_t all;
             
             struct {
-                uint8_t iout_oc_fault   : 1;
-                uint8_t                 : 1; // UNSUPPORTED - IOUT_OC_LV_FAULT
-                uint8_t iout_oc_warning : 1;
-                uint8_t                 : 1; // UNSUPPORTED - IOUT_UC_FAULT
-                uint8_t                 : 1; // UNSUPPORTED - Current Share Fault
-                uint8_t                 : 1; // UNSUPPORTED - In Power Limiting Mode
-                uint8_t                 : 1; // UNSUPPORTED - POUT_OP_FAULT
                 uint8_t                 : 1; // UNSUPPORTED - POUT_OP_WARNING
+                uint8_t                 : 1; // UNSUPPORTED - POUT_OP_FAULT
+                uint8_t                 : 1; // UNSUPPORTED - In Power Limiting Mode
+                uint8_t                 : 1; // UNSUPPORTED - Current Share Fault
+                uint8_t                 : 1; // UNSUPPORTED - IOUT_UC_FAULT
+                uint8_t iout_oc_warning : 1;
+                uint8_t                 : 1; // UNSUPPORTED - IOUT_OC_LV_FAULT
+                uint8_t iout_oc_fault   : 1;
             };
         };
     };
@@ -139,14 +139,14 @@ public:
             uint8_t all;
 
             struct {
-                uint8_t vin_ov_fault   : 1;
-                uint8_t vin_ov_warning : 1;
-                uint8_t                : 1; // UNSUPPORTED - VIN_UV_WARNING
-                uint8_t vin_uv_fault   : 1;
-                uint8_t                : 1; // UNSUPPORTED - Unit Off For Insufficient Input Voltage
-                uint8_t                : 1; // UNSUPPORTED - IIN_OC_FAULT
-                uint8_t                : 1; // UNSUPPORTED - IIN_OC_WARNING
                 uint8_t                : 1; // UNSUPPORTED - PIN_OP_WARNING
+                uint8_t                : 1; // UNSUPPORTED - IIN_OC_WARNING
+                uint8_t                : 1; // UNSUPPORTED - IIN_OC_FAULT
+                uint8_t                : 1; // UNSUPPORTED - Unit Off For Insufficient Input Voltage
+                uint8_t vin_uv_fault   : 1;
+                uint8_t                : 1; // UNSUPPORTED - VIN_UV_WARNING
+                uint8_t vin_ov_warning : 1;
+                uint8_t vin_ov_fault   : 1;
             };
         };
     };
@@ -157,11 +157,11 @@ public:
             uint8_t all;
 
             struct {
-                uint8_t ot_fault   : 1;
-                uint8_t ot_warning : 1;
-                uint8_t            : 1; // UNSUPPORTED - UT_WARNING
-                uint8_t ut_fault   : 1;
                 uint8_t reserved   : 4; // Reserved bits
+                uint8_t ut_fault   : 1;
+                uint8_t            : 1; // UNSUPPORTED - UT_WARNING
+                uint8_t ot_warning : 1;
+                uint8_t ot_fault   : 1;
             };
         };
         
@@ -174,14 +174,14 @@ public:
             uint8_t all;
             
             struct {
-                uint8_t cmd_stat_rx  : 1; // Invalid Or Unsupported Command Received
-                uint8_t data_stat_rx : 1;
-                uint8_t              : 1; // UNSUPPORTED - Packet Error Check Failed
-                uint8_t              : 1; // UNSUPPORTED - Memory Fault Detected
-                uint8_t              : 1; // UNSUPPORTED - Processor Fault Detected
-                uint8_t reserved     : 1; // Reserved bit
-                uint8_t other        : 1; // Other Communication Faults
                 uint8_t              : 1; // UNSUPPORTED - Other Memory Or Logic Fault
+                uint8_t other        : 1; // Other Communication Faults
+                uint8_t reserved     : 1; // Reserved bit
+                uint8_t              : 1; // UNSUPPORTED - Processor Fault Detected
+                uint8_t              : 1; // UNSUPPORTED - Memory Fault Detected
+                uint8_t              : 1; // UNSUPPORTED - Packet Error Check Failed
+                uint8_t data_stat_rx : 1; // Invalid Or Unsupported Data Received
+                uint8_t cmd_stat_rx  : 1; // Invalid Or Unsupported Command Received
             };
         };
     };
@@ -191,10 +191,10 @@ public:
             uint8_t all;
             
             struct {
-                uint8_t reserved          : 5; // Reserved bits
-                uint8_t bcm_uart_cml      : 1; // BCM UART CML
-                uint8_t shutdown_fault    : 1; // Hardware Protections Shutdown Fault
                 uint8_t reverse_operation : 1; // BCM Reverse Operation.
+                uint8_t shutdown_fault    : 1; // Hardware Protections Shutdown Fault
+                uint8_t bcm_uart_cml      : 1; // BCM UART CML
+                uint8_t reserved          : 5; // Reserved bits
             };
         };
     };
