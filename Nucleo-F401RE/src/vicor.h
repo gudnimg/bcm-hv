@@ -193,9 +193,6 @@ extern BCM4414 bcm;
 #define I2C_TIMEOUT    100
 
 // Function declarations
-bool pmbus_read(I2C_HandleTypeDef *hi2c, uint8_t cmd, uint8_t *buffer, uint8_t nbytes);
-void pmbus_write(I2C_HandleTypeDef *hi2c, uint8_t cmd, uint8_t *buffer);
-
 void read_status_cml(I2C_HandleTypeDef *hi2c);
 void read_status_specific(I2C_HandleTypeDef *hi2c);
 void read_status_iout(I2C_HandleTypeDef *hi2c);

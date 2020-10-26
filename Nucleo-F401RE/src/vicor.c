@@ -3,12 +3,22 @@
 
 BCM4414 bcm; // Global BCM variable.
 
-bool pmbus_read(I2C_HandleTypeDef *hi2c, uint8_t cmd, uint8_t *buffer, uint8_t nbytes) {
+static bool pmbus_read(I2C_HandleTypeDef *hi2c, uint8_t cmd, uint8_t *buffer, uint8_t nbytes);
+static void pmbus_write(I2C_HandleTypeDef *hi2c, uint8_t cmd, uint8_t *buffer);
+
+static bool pmbus_read(I2C_HandleTypeDef *hi2c, uint8_t cmd, uint8_t *buffer, uint8_t nbytes) {
     const uint8_t address = DEVICE_ADDRESS << 1;
     const uint8_t cmd_size = 1;
     HAL_I2C_Mem_Read(hi2c, address, cmd, cmd_size, buffer, nbytes, I2C_TIMEOUT);
 
     return true;
+}
+
+static void pmbus_write(I2C_HandleTypeDef *hi2c, uint8_t cmd, uint8_t *buffer) {
+    const uint8_t address = DEVICE_ADDRESS << 1;
+    const uint8_t cmd_size = 1;
+    const uint16_t buff_size = sizeof(buffer);
+    HAL_I2C_Mem_Write(hi2c, address, cmd, cmd_size, buffer, buff_size, I2C_TIMEOUT);
 }
 
 void read_status_cml(I2C_HandleTypeDef *hi2c) {
@@ -74,12 +84,7 @@ void read_vin(I2C_HandleTypeDef *hi2c) {
     bcm.measurements.vin = (buffer[1] << 8) | buffer[0];
 }
 
-void pmbus_write(I2C_HandleTypeDef *hi2c, uint8_t cmd, uint8_t *buffer) {
-    const uint8_t address = DEVICE_ADDRESS << 1;
-    const uint8_t cmd_size = 1;
-    const uint16_t buff_size = sizeof(buffer);
-    HAL_I2C_Mem_Write(hi2c, address, cmd, cmd_size, buffer, buff_size, I2C_TIMEOUT);
-}
+
 
 // This command clears all status bits that have been previously set.
 // Persistent or active faults are re-asserted again once cleared.
