@@ -1,5 +1,5 @@
 # bcm-hv
-Library for Vicor's BCM4414 DC/DC regulator.
+Library for Vicor's BCM4414 DC/DC regulator. There is a separate folder for Arduino and STM32F4.
 
 # Background
 Many EV Formula Student teams use 600V tractive system voltage. The higher the voltage, the thinner the cables. 
@@ -11,6 +11,12 @@ To power the low voltage electronics you can do either of 2 things.
 It is difficult to find a rule compliant regulator. One such regulator is Vicor's BCM4414. 
 
 ----
+
+# Hardware connection
+External pull-ups are required to get good signal edges. You can use either 3.3V or 5V, either works fine.
+
+You can choose your own ADDR resistor value (R3) by looking up the table in the datasheet. Using 1000 Ohms and depicted below yields a device address 0x51.
+![](images/bcm_master_connection.PNG)
 
 # Usage
 
