@@ -14,6 +14,8 @@
 #include "stm32f4xx_hal_i2c.h"
 #include <stdbool.h>
 
+extern UART_HandleTypeDef huart1; // Probably not the best place to put this.
+
 typedef struct  {
     union {
         uint16_t all;
@@ -203,6 +205,8 @@ void read_iout(I2C_HandleTypeDef *hi2c);
 void read_iin(I2C_HandleTypeDef *hi2c);
 void read_pout(I2C_HandleTypeDef *hi2c);
 void read_vin(I2C_HandleTypeDef *hi2c);
+void read_vout(I2C_HandleTypeDef *hi2c);
+void read_rout(I2C_HandleTypeDef *hi2c);
 
 void clear_faults(I2C_HandleTypeDef *hi2c);
 
