@@ -123,6 +123,22 @@ typedef struct {
     };
 } sStatusSpecific_t;
 
+// Data structure for SET_ALL_THRESHOLD (D5h)
+typedef struct {
+    union {
+        uint8_t all[6];
+        
+        struct {
+            uint8_t ot_fault_limit;     // Overtemperature fault threshold.
+            uint8_t ot_warn_limit;      // Overtemperature warning threshold.
+            uint8_t vin_ov_fault_limit; // Input- over-voltage fault threshold.
+            uint8_t vin_ov_warn_limit;  // Input- over-voltage warning threshold.
+            uint8_t iout_oc_fault_limit;// Output- over-current fault threshold.
+            uint8_t iout_oc_warn_limit; // Output- over-current fault threshold.
+        };
+    };
+} sThresholds_t;
+
 // Data structure for measurement data.
 typedef struct {
     float   vin;  // HI-side voltage. Range: 130V to 780V
@@ -144,6 +160,7 @@ typedef struct _BCM4414 {
     sStatusInput_t       status_input;
     sStatusIOUT_t        status_iout;
     sStatusData_t        status_data;
+    sThresholds_t        thresholds;
 } BCM4414;
 
 extern BCM4414 bcm;
@@ -205,6 +222,7 @@ void read_iout(I2C_HandleTypeDef *hi2c);
 void read_iin(I2C_HandleTypeDef *hi2c);
 void read_pout(I2C_HandleTypeDef *hi2c);
 void read_vin(I2C_HandleTypeDef *hi2c);
+void read_ton_delay(I2C_HandleTypeDef *hi2c);
 void read_vout(I2C_HandleTypeDef *hi2c);
 void read_rout(I2C_HandleTypeDef *hi2c);
 

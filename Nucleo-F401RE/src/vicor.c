@@ -162,6 +162,13 @@ void read_vin(I2C_HandleTypeDef *hi2c) {
     }
 }
 
+void read_ton_delay(I2C_HandleTypeDef *hi2c){
+    uint8_t buffer[2] = {0};
+    pmbus_read(hi2c, VICOR_CMD_TON_DELAY, buffer, 2);
+
+    bcm.measurements.tdelay = (buffer[1] << 8) | buffer[0];
+}
+
 void read_vout(I2C_HandleTypeDef *hi2c) {
     uint8_t buffer[2] = {0};
     bool status = pmbus_read(hi2c, VICOR_CMD_READ_VOUT, buffer, 2);
